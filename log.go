@@ -48,13 +48,12 @@ var levelChar = [4]byte{'D', 'I', 'W', 'E'}
 // the Writer's Write method.  A Logger can be used simultaneously from
 // multiple goroutines; it guarantees to serialize access to the Writer.
 type Logger struct {
-	mu        sync.Mutex // ensures atomic writes; protects the following fields
-	prefix    string     // prefix to write at beginning of each line
-	flag      int        // properties
-	level     int        // verbosity level
-	calldepth int        // calldepth
-	out       io.Writer  // destination for output
-	buf       []byte     // for accumulating text to write
+	mu     sync.Mutex // ensures atomic writes; protects the following fields
+	prefix string     // prefix to write at beginning of each line
+	flag   int        // properties
+	level  int        // verbosity level
+	out    io.Writer  // destination for output
+	buf    []byte     // for accumulating text to write
 }
 
 // New creates a new Logger.   The out variable sets the
@@ -90,10 +89,11 @@ func itoa(buf *[]byte, i int, wid int) {
 	*buf = append(*buf, b[bp:]...)
 }
 
-func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line, level int) {
+func formatHeader(buf *[]byte, t time.Time,
+	file, prefix string, line, level, flag int) {
 
-	if l.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
-		if l.flag&Ldate != 0 {
+	if flag&(Ldate|Ltime|Lmicroseconds) != 0 {
+		if flag&Ldate != 0 {
 			year, month, day := t.Date()
 			itoa(buf, year, 4)
 			*buf = append(*buf, '.')
@@ -102,14 +102,14 @@ func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line, level
 			itoa(buf, day, 2)
 			*buf = append(*buf, ' ')
 		}
-		if l.flag&(Ltime|Lmicroseconds) != 0 {
+		if flag&(Ltime|Lmicroseconds) != 0 {
 			hour, min, sec := t.Clock()
 			itoa(buf, hour, 2)
 			*buf = append(*buf, ':')
 			itoa(buf, min, 2)
 			*buf = append(*buf, ':')
 			itoa(buf, sec, 2)
-			if l.flag&Lmicroseconds != 0 {
+			if flag&Lmicroseconds != 0 {
 				*buf = append(*buf, '.')
 				itoa(buf, t.Nanosecond()/1e3, 6)
 			}
@@ -117,8 +117,8 @@ func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line, level
 		}
 	}
 
-	if l.flag&(Lshortfile|Llongfile) != 0 {
-		if l.flag&Lshortfile != 0 {
+	if flag&(Lshortfile|Llongfile) != 0 {
+		if flag&Lshortfile != 0 {
 			short := file
 			for i := len(file) - 1; i > 0; i-- {
 				if file[i] == '/' {
@@ -134,8 +134,8 @@ func (l *Logger) formatHeader(buf *[]byte, t time.Time, file string, line, level
 		*buf = append(*buf, ": "...)
 	}
 
-	if len(l.prefix) > 0 {
-		*buf = append(*buf, l.prefix...)
+	if len(prefix) > 0 {
+		*buf = append(*buf, prefix...)
 		*buf = append(*buf, ' ')
 	}
 
@@ -179,7 +179,7 @@ func (l *Logger) Output(calldepth, level int, s string) error {
 		l.mu.Lock()
 	}
 	l.buf = l.buf[:0]
-	l.formatHeader(&l.buf, now, file, line, level)
+	formatHeader(&l.buf, now, file, l.prefix, line, level, l.flag)
 	l.buf = append(l.buf, s...)
 	if len(s) > 0 && s[len(s)-1] != '\n' {
 		l.buf = append(l.buf, '\n')
