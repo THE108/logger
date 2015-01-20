@@ -17,18 +17,14 @@ type Scope struct {
 	buf    []byte     // for accumulating text to write
 }
 
-func NewScope(out io.Writer, prefix string) *Scope {
+func NewScope(out io.Writer, prefix string, level int) *Scope {
 
 	return &Scope{
 		prefix: prefix,
 		flag:   LstdFlags,
-		level:  DEBUG,
+		level:  level,
 		out:    out,
 	}
-}
-
-func (s *Scope) String() string {
-	return string(s.buf)
 }
 
 func (s *Scope) Flush() error {

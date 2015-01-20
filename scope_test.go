@@ -10,15 +10,15 @@ import (
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { TestingT(t) }
 
-type MySuite struct{}
+type ScopeSuite struct{}
 
-var _ = Suite(&MySuite{})
+var _ = Suite(&ScopeSuite{})
 
-func (s *MySuite) TestScopeLogger(c *C) {
+func (s *ScopeSuite) TestScopeLogger(c *C) {
 
 	var out bytes.Buffer
 
-	scope := NewScope(&out, "test")
+	scope := NewScope(&out, "test", DEBUG)
 
 	scope.Info("INFOLN")
 	scope.Debug("DEBUG")
