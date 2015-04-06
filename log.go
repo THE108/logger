@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -270,8 +271,8 @@ func (l *Logger) Flags() int {
 // SetFlags sets the output flags for the logger.
 func (l *Logger) SetFlags(flag int) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	l.flag = flag
+	l.mu.Unlock()
 }
 
 // Prefix returns the output prefix for the logger.
@@ -284,8 +285,8 @@ func (l *Logger) Prefix() string {
 // SetPrefix sets the output prefix for the logger.
 func (l *Logger) SetPrefix(prefix string) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	l.prefix = prefix
+	l.mu.Unlock()
 }
 
 func (l *Logger) Level() int {
@@ -294,10 +295,51 @@ func (l *Logger) Level() int {
 	return l.level
 }
 
-func (l *Logger) SetLevel(level int) {
+func (l *Logger) LevelString() string {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
+	switch l.level {
+	case DEBUG:
+		return "DEBUG"
+	case ERROR:
+		return "ERROR"
+	case INFO:
+		return "INFO"
+	case WARNING:
+		return "WARNING"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+func (l *Logger) SetLevel(level int) {
+	l.mu.Lock()
 	l.level = level
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetLevelString(level string) {
+
+	level = strings.ToUpper(level)
+	var lvl int
+
+	switch level {
+	case "DEBUG":
+		lvl = DEBUG
+	case "ERROR":
+		lvl = ERROR
+	case "INFO":
+		lvl = INFO
+	case "WARNING":
+		lvl = WARNING
+	default:
+		return
+	}
+
+	l.mu.Lock()
+	l.level = lvl
+	l.mu.Unlock()
 }
 
 // SetOutput sets the output destination for the standard logger.
