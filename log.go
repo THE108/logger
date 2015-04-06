@@ -295,11 +295,29 @@ func (l *Logger) Level() int {
 	return l.level
 }
 
-func (l *Logger) LevelString() string {
+func (l *Logger) SetLevel(level int) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
+	l.level = level
+	l.mu.Unlock()
+}
 
-	switch l.level {
+func LevelFromString(level string) int {
+	switch strings.ToUpper(level) {
+	case "DEBUG":
+		return DEBUG
+	case "ERROR":
+		return ERROR
+	case "INFO":
+		return INFO
+	case "WARNING":
+		return WARNING
+	default:
+		return -1
+	}
+}
+
+func LevelToString(level int) string {
+	switch level {
 	case DEBUG:
 		return "DEBUG"
 	case ERROR:
@@ -313,40 +331,11 @@ func (l *Logger) LevelString() string {
 	}
 }
 
-func (l *Logger) SetLevel(level int) {
-	l.mu.Lock()
-	l.level = level
-	l.mu.Unlock()
-}
-
-func (l *Logger) SetLevelString(level string) {
-
-	level = strings.ToUpper(level)
-	var lvl int
-
-	switch level {
-	case "DEBUG":
-		lvl = DEBUG
-	case "ERROR":
-		lvl = ERROR
-	case "INFO":
-		lvl = INFO
-	case "WARNING":
-		lvl = WARNING
-	default:
-		return
-	}
-
-	l.mu.Lock()
-	l.level = lvl
-	l.mu.Unlock()
-}
-
 // SetOutput sets the output destination for the standard logger.
 func SetOutput(w io.Writer) {
 	std.mu.Lock()
-	defer std.mu.Unlock()
 	std.out = w
+	std.mu.Unlock()
 }
 
 // Flags returns the output flags for the standard logger.
