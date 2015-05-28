@@ -301,6 +301,13 @@ func (l *Logger) SetLevel(level int) {
 	l.mu.Unlock()
 }
 
+// SetOutput sets the output destination for the logger.
+func (l *Logger) SetOutput(w io.Writer) {
+	l.mu.Lock()
+	l.out = w
+	l.mu.Unlock()
+}
+
 func LevelFromString(level string) int {
 	switch strings.ToUpper(level) {
 	case "DEBUG":
