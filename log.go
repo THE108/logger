@@ -338,6 +338,11 @@ func SetOutput(w io.Writer) {
 	std.mu.Unlock()
 }
 
+// GetStdLogger returns the standard logger instance.
+func GetStdLogger() *Logger {
+	return std
+}
+
 // Flags returns the output flags for the standard logger.
 func Flags() int {
 	return std.Flags()
