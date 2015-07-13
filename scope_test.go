@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -21,8 +22,13 @@ func (s *ScopeSuite) TestScopeLogger(c *C) {
 	scope := NewScope(&out, "test", DEBUG)
 
 	scope.Info("INFOLN")
+
+	time.Sleep(100 * time.Millisecond)
+
 	scope.Debug("DEBUG")
 	scope.Errorf("ERRORF -> %d", 1)
+
+	time.Sleep(200 * time.Millisecond)
 
 	scope.SetLevel(WARNING)
 
@@ -38,12 +44,11 @@ func (s *ScopeSuite) TestScopeLogger(c *C) {
 
 	c.Log(o)
 
-	c.Assert(o, Matches,
-		`[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] test
-		| [I] INFOLN
-		| [D] DEBUG
-		| [E] ERRORF -> 1
-		| [D] DEBUG
-		| scope_test.go:33: [E] ERRORF -> 2
+	c.Assert(o[20:], Equals,
+		`test
+		[I] +0ms	INFOLN
+		[D] +100ms	DEBUG
+		[E] +100ms	ERRORF -> 1
+		[E] +300ms	scope_test.go:39: ERRORF -> 2
 `)
 }

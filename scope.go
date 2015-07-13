@@ -15,6 +15,8 @@ type Scope struct {
 	level  int        // verbosity level
 	out    io.Writer  // destination for output
 	buf    []byte     // for accumulating text to write
+
+	firstWriteTime time.Time
 }
 
 func NewScope(out io.Writer, prefix string, level int) *Scope {
@@ -36,10 +38,8 @@ func (s *Scope) Flush() error {
 
 	if s.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
 
-		t := time.Now() // get this early
-
 		if s.flag&Ldate != 0 {
-			year, month, day := t.Date()
+			year, month, day := s.firstWriteTime.Date()
 			itoa(&b, year, 4)
 			b = append(b, '.')
 			itoa(&b, int(month), 2)
@@ -49,7 +49,7 @@ func (s *Scope) Flush() error {
 		}
 
 		if s.flag&(Ltime|Lmicroseconds) != 0 {
-			hour, min, sec := t.Clock()
+			hour, min, sec := s.firstWriteTime.Clock()
 			itoa(&b, hour, 2)
 			b = append(b, ':')
 			itoa(&b, min, 2)
@@ -57,7 +57,7 @@ func (s *Scope) Flush() error {
 			itoa(&b, sec, 2)
 			if s.flag&Lmicroseconds != 0 {
 				b = append(b, '.')
-				itoa(&b, t.Nanosecond()/1e3, 6)
+				itoa(&b, s.firstWriteTime.Nanosecond()/1e3, 6)
 			}
 			b = append(b, ' ')
 		}
@@ -84,13 +84,18 @@ func (s *Scope) Output(calldepth, level int, message string) {
 		return
 	}
 
-	s.buf = append(s.buf, '\t', '\t', '|', ' ')
+	if len(s.buf) == 0 {
+		s.firstWriteTime = time.Now()
+	}
+
+	s.buf = append(s.buf,
+		'\t', '\t', '[', levelChar[level], ']', ' ', '+')
+
+	// Add elapsed time since scope started
+	itoa(&s.buf, int(time.Since(s.firstWriteTime).Nanoseconds()/1e6), -1)
+	s.buf = append(s.buf, "ms\t"...)
 
 	if s.flag&(Lshortfile|Llongfile) != 0 {
-
-		// var file string
-		// var line int
-		// var ok bool
 
 		// release lock while getting caller info - it's expensive.
 		s.mu.Unlock()
@@ -117,7 +122,6 @@ func (s *Scope) Output(calldepth, level int, message string) {
 		s.buf = append(s.buf, ": "...)
 	}
 
-	s.buf = append(s.buf, '[', levelChar[level], ']', ' ')
 	s.buf = append(s.buf, message...)
 	s.buf = append(s.buf, '\n')
 }
