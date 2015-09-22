@@ -34,6 +34,10 @@ func (s *Scope) Flush() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if len(s.buf) == 0 {
+		return nil
+	}
+
 	var b []byte
 
 	if s.flag&(Ldate|Ltime|Lmicroseconds) != 0 {
